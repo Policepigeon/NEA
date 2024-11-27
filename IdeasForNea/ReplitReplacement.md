@@ -1,0 +1,1 @@
+A self hosted replacement for replit - using a server that gets sent a cmake or jython ..etc.. command. Allows for multiple users to collaborate.
