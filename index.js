@@ -3,8 +3,8 @@
 /*  Google AUTH  */
  
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-const GOOGLE_CLIENT_ID = 'no secrets here';
-const GOOGLE_CLIENT_SECRET = 'not here either';
+const GOOGLE_CLIENT_ID = '#clientidhere#';
+const GOOGLE_CLIENT_SECRET = '#clientsecrethere#';
 passport.use(new GoogleStrategy({
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
