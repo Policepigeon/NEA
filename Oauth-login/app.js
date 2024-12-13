@@ -2,7 +2,7 @@
 const client = new Appwrite.Client();
 client
     .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-    .setProject('your-project-id'); // Replace with your project ID
+    .setProject('online-ide'); // Replace with your project ID
 
 const account = new Appwrite.Account(client);
 
