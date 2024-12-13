@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Login with Appwrite</title>
+</head>
+<body>
+    <button id="google-login">Login with Google</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/appwrite"></script>
+    <script>
+        // Initialize Appwrite Client
+        const client = new Appwrite.Client();
+        client
+            .setEndpoint('https://cloud.appwrite.io/v1') // Your Appwrite endpoint
+            .setProject('online-ide'); // Your Appwrite project ID
+
+        // Initialize Account API
+        const account = new Appwrite.Account(client);
+
+        // Event Listener for Login Button
+        document.getElementById('google-login').addEventListener('click', () => {
+            account.createOAuth2Session('google');
+        });
+
+        // Check if the User is Already Logged In
+        account.get()
+            .then(response => {
+                console.log('User Details:', response);
+            })
+            .catch(error => {
+                console.error('Not Logged In:', error);
+            });
+    </script>
+</body>
+</html>
