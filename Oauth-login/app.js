@@ -26,22 +26,13 @@ account.get()
 
         // Send the credentials to the C++ backend
         fetch('http://localhost:5600/save-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              name: response.name,
-              email: response.email,
-          }),
-      })
-      .then(res => {
-          if (res.ok) {
-              console.log('User credentials sent successfully');
-          } else {
-              console.error('Failed to send user credentials');
-          }
-      })
-      .catch(err => console.error('Error:', err));
-      
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: response.name,
+                email: response.email,
+            }),
+        })
         .then(res => {
             if (res.ok) {
                 console.log('User credentials sent successfully');
