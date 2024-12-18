@@ -1,3 +1,8 @@
+//sqlite from frontend!
+const sqlite3 = require("sqlite3");
+
+
+
 // Initialize Appwrite Client
 const client = new Appwrite.Client();
 client
