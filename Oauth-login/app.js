@@ -1,8 +1,8 @@
 // Initialize Appwrite Client
 const client = new Appwrite.Client();
 client
-    .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-    .setProject('online-ide'); // Replace with your project ID
+    .setEndpoint('https://cloud.appwrite.io/v1') 
+    .setProject('online-ide'); 
 
 const account = new Appwrite.Account(client);
 
@@ -41,6 +41,19 @@ account.get()
             }
         })
         .catch(err => console.error('Error:', err));
+
+         // Insert data into the `users` table
+         db.run(
+            `INSERT INTO users (user_id, name, email, token) VALUES (?, ?, ?, ?)`,
+            [userId, name, email, token],
+            function (err) {
+                if (err) {
+                    console.error("Error inserting data:", err.message);
+                } else {
+                    console.log(`A row has been inserted with rowid ${this.lastID}`);
+                }
+            }
+        );
     })
     .catch(() => {
         document.getElementById('user-info').textContent = 'Not logged in.';
