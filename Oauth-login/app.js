@@ -13,7 +13,13 @@ document.getElementById('google-login').addEventListener('click', () => {
 
 // Check if the user is already logged in
 account.get()
+
     .then(response => {
+        console.log("User Details:", response);
+    // You can access response.name, response.email, etc.
+})
+.catch(error => {
+    console.error("Error fetching user details:", error);
         // Update the UI with user information
         document.getElementById('user-info').textContent = `Logged in as: ${response.name} (${response.email})`;
         // Prepare data to insert into the SQLite database
