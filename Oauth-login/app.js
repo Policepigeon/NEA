@@ -1,8 +1,3 @@
-//sqlite from frontend!
-import sqlite3 from "sqlite3";
-
-const db = new sqlite3.Database("users.db");
-
 // Initialize Appwrite Client
 const client = new Appwrite.Client();
 client
@@ -46,34 +41,6 @@ account.get()
             }
         })
         .catch(err => console.error('Error:', err));
-    })
-    .catch(() => {
-        document.getElementById('user-info').textContent = 'Not logged in.';
-    });
-
-
-    account.get()
-    .then(response => {
-        document.getElementById('user-info').textContent = `Logged in as: ${response.name} (${response.email})`;
-
-        // Prepare data to insert into the SQLite database
-        const userId = response.$id; // Unique user ID from Appwrite
-        const name = response.name; // Name of the user
-        const email = response.email; // Email of the user
-        const token = "some_generated_token"; // Replace with a token if applicable
-
-        // Insert data into the `users` table
-        db.run(
-            `INSERT INTO users (user_id, name, email, token) VALUES (?, ?, ?, ?)`,
-            [userId, name, email, token],
-            function (err) {
-                if (err) {
-                    console.error("Error inserting data:", err.message);
-                } else {
-                    console.log(`A row has been inserted with rowid ${this.lastID}`);
-                }
-            }
-        );
     })
     .catch(() => {
         document.getElementById('user-info').textContent = 'Not logged in.';
