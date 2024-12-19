@@ -42,6 +42,13 @@ account.get()
         })
         .catch(err => console.error('Error:', err));
 
+        // Prepare data to insert into the SQLite database
+        const userId = response.$id; // Unique user ID from Appwrite
+        const name = response.name; // Name of the user
+        const email = response.email; // Email of the user
+        const token = "session_managed_by_appwrite"; // Indicating the session is cookie-based
+
+
          // Insert data into the `users` table
          db.run(
             `INSERT INTO users (user_id, name, email, token) VALUES (?, ?, ?, ?)`,
