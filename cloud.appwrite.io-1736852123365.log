@@ -1,0 +1,56 @@
++layout.ts:21 
+        
+        
+       GET https://cloud.appwrite.io/v1/account 401 (Unauthorized)
+window.fetch @ fetcher.js:76
+(anonymous) @ fetch.js:73
+(anonymous) @ sdk.js:649
+(anonymous) @ sdk.js:22
+p @ sdk.js:18
+call @ sdk.js:646
+(anonymous) @ sdk.js:735
+(anonymous) @ sdk.js:22
+p @ sdk.js:18
+get @ sdk.js:728
+ce @ +layout.ts:21
+(anonymous) @ load.js:88
+Pn @ handleCallbackErrors.js:24
+(anonymous) @ load.js:88
+Pn.status @ trace.js:61
+Pn @ handleCallbackErrors.js:24
+(anonymous) @ trace.js:60
+(anonymous) @ trace.js:443
+(anonymous) @ trace.js:42
+withScope @ stackStrategy.js:39
+hn @ stackStrategy.js:125
+mt @ currentScopes.js:53
+Yr @ trace.js:40
+apply @ load.js:79
+Te @ client.js:742
+await in Te
+(anonymous) @ client.js:956
+xe @ client.js:927
+X @ client.js:1297
+Ue @ client.js:380
+un @ client.js:1747
+_n @ client.js:308
+(anonymous) @ success?project=online-ide&domain=.cloud.appwrite.io&key=a_session_online-ide&secret=eyJpZCI6IjY3NjQxN2UyOGJmYTA3NTk1MjExIiwic2VjcmV0IjoiYmI1NzJmMGU0ZGJiZGVjYTRjMzE3YWExM2Y1MzhmNmMyY2FjZDY2ZDc2NDI4NzM0ODI2ZWI4ZmMzZTIxNjEzM2JiOGU4NjM4ZTgwZmIyMzVjYWNkYzI4NTdkZDMwMDg1NDNiYjE2YTliYTNhZDQyYjYzNWJkZTQ3OGI0YWQ1ZDhkY2IwMjVmOGU1MmU0YzNjZmQ5NTg1YTg2M2MwNTA0NjM2M2UwNzYyNTRkMGViZGYzNTRlMjM5Mjg2YzE0ZTM4ZmRmNzFkZDVkMDAxNzVmMjNiMTYzMzYxNDZjZDY1YmY2YjE5YjVhMTE1MGM4M2FlMmRmYWU4YzllYjcxODQxNiJ9:188
+Promise.then
+(anonymous) @ success?project=online-ide&domain=.cloud.appwrite.io&key=a_session_online-ide&secret=eyJpZCI6IjY3NjQxN2UyOGJmYTA3NTk1MjExIiwic2VjcmV0IjoiYmI1NzJmMGU0ZGJiZGVjYTRjMzE3YWExM2Y1MzhmNmMyY2FjZDY2ZDc2NDI4NzM0ODI2ZWI4ZmMzZTIxNjEzM2JiOGU4NjM4ZTgwZmIyMzVjYWNkYzI4NTdkZDMwMDg1NDNiYjE2YTliYTNhZDQyYjYzNWJkZTQ3OGI0YWQ1ZDhkY2IwMjVmOGU1MmU0YzNjZmQ5NTg1YTg2M2MwNTA0NjM2M2UwNzYyNTRkMGViZGYzNTRlMjM5Mjg2YzE0ZTM4ZmRmNzFkZDVkMDAxNzVmMjNiMTYzMzYxNDZjZDY1YmY2YjE5YjVhMTE1MGM4M2FlMmRmYWU4YzllYjcxODQxNiJ9:187
+Promise.then
+(anonymous) @ success?project=online-ide&domain=.cloud.appwrite.io&key=a_session_online-ide&secret=eyJpZCI6IjY3NjQxN2UyOGJmYTA3NTk1MjExIiwic2VjcmV0IjoiYmI1NzJmMGU0ZGJiZGVjYTRjMzE3YWExM2Y1MzhmNmMyY2FjZDY2ZDc2NDI4NzM0ODI2ZWI4ZmMzZTIxNjEzM2JiOGU4NjM4ZTgwZmIyMzVjYWNkYzI4NTdkZDMwMDg1NDNiYjE2YTliYTNhZDQyYjYzNWJkZTQ3OGI0YWQ1ZDhkY2IwMjVmOGU1MmU0YzNjZmQ5NTg1YTg2M2MwNTA0NjM2M2UwNzYyNTRkMGViZGYzNTRlMjM5Mjg2YzE0ZTM4ZmRmNzFkZDVkMDAxNzVmMjNiMTYzMzYxNDZjZDY1YmY2YjE5YjVhMTE1MGM4M2FlMmRmYWU4YzllYjcxODQxNiJ9:181
+/console/auth/oauth2/success?project=online-ide&domain=.cloud.appwrite.io&key=a_session_online-ide&secret=eyJpZCI6IjY3NjQxN2UyOGJmYTA3NTk1MjExIiwic2VjcmV0IjoiYmI1NzJmMGU0ZGJiZGVjYTRjMzE3YWExM2Y1MzhmNmMyY2FjZDY2ZDc2NDI4NzM0ODI2ZWI4ZmMzZTIxNjEzM2JiOGU4NjM4ZTgwZmIyMzVjYWNkYzI4NTdkZDMwMDg1NDNiYjE2YTliYTNhZDQyYjYzNWJkZTQ3OGI0YWQ1ZDhkY2IwMjVmOGU1MmU0YzNjZmQ5NTg1YTg2M2MwNTA0NjM2M2UwNzYyNTRkMGViZGYzNTRlMjM5Mjg2YzE0ZTM4ZmRmNzFkZDVkMDAxNzVmMjNiMTYzMzYxNDZjZDY1YmY2YjE5YjVhMTE1MGM4M2FlMmRmYWU4YzllYjcxODQxNiJ9#:1 Launched external handler for 'appwrite-callback-online-ide://?project=online-ide&domain=.cloud.appwrite.io&key=a_session_online-ide&secret=eyJpZCI6IjY3NjQxN2UyOGJmYTA3NTk1MjExIiwic2VjcmV0IjoiYmI1NzJmMGU0ZGJiZGVjYTRjMzE3YWExM2Y1MzhmNmMyY2FjZDY2ZDc2NDI4NzM0ODI2ZWI4ZmMzZTIxNjEzM2JiOGU4NjM4ZTgwZmIyMzVjYWNkYzI4NTdkZDMwMDg1NDNiYjE2YTliYTNhZDQyYjYzNWJkZTQ3OGI0YWQ1ZDhkY2IwMjVmOGU1MmU0YzNjZmQ5NTg1YTg2M2MwNTA0NjM2M2UwNzYyNTRkMGViZGYzNTRlMjM5Mjg2YzE0ZTM4ZmRmNzFkZDVkMDAxNzVmMjNiMTYzMzYxNDZjZDY1YmY2YjE5YjVhMTE1MGM4M2FlMmRmYWU4YzllYjcxODQxNiJ9'.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
