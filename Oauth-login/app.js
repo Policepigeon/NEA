@@ -43,3 +43,22 @@ account.get()
         // If not logged in, update the UI
         document.getElementById('user-info').textContent = 'Not logged in.';
     });
+
+    
+    // src/App.js
+import React from 'react'
+import Auth from './Auth'
+
+const App = () => {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Appwrite Google Auth Example</h1>
+        <Auth />
+      </header>
+    </div>
+  )
+}
+
+export default App
+
