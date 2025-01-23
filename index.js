@@ -1,32 +1,47 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const session = require('express-session');
+const jwt = require('jsonwebtoken');
 const { AuthorizationCode } = require('simple-oauth2');
 
 dotenv.config();
 const app = express();
 
-// Configure OAuth2 client
+// OAuth2 client setup
 const oauth2Client = new AuthorizationCode({
   client: {
     id: process.env.GOOGLE_CLIENT_ID,
     secret: process.env.GOOGLE_CLIENT_SECRET,
   },
   auth: {
-    tokenHost: 'https://oauth2.googleapis.com',
-    authorizePath: '/o/oauth2/auth',
+    tokenHost: 'https://accounts.google.com',
+    authorizePath: '/o/oauth2/v2/auth',
     tokenPath: '/token',
   },
 });
 
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'default_secret',
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// Generate Google login URL
 const authorizationUri = oauth2Client.authorizeURL({
   redirect_uri: process.env.GOOGLE_REDIRECT_URI,
   scope: ['openid', 'profile', 'email'],
   response_type: 'code',
-  prompt: 'consent', // Forces user to select an account
+  prompt: 'consent',
+
 });
 
-// Route to start OAuth2 login flow
+// Route to start OAuth flow when button is clicked
 app.get('/login', (req, res) => {
+  console.log('Generated Google login URL:', authorizationUri);
   res.redirect(authorizationUri);
 });
 
@@ -34,73 +49,62 @@ app.get('/login', (req, res) => {
 app.get('/callback', async (req, res) => {
   const { code } = req.query;
 
+  if (!code) {
+    return res.status(400).send('Authorization code not received.');
+  }
+
   try {
     const tokenParams = {
       code,
       redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-      scope: 'openid profile email',
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      grant_type: 'authorization_code',
     };
 
+    console.log('Token request params:', tokenParams);
+
     const accessToken = await oauth2Client.getToken(tokenParams);
-    res.json({
-      access_token: accessToken.token.access_token,
-      id_token: accessToken.token.id_token, // Contains user profile info
-    });
+    const idToken = accessToken.token.id_token;
+    const userInfo = jwt.decode(idToken);
+
+    req.session.user = userInfo;
+    res.redirect('/dashboard');
   } catch (error) {
-    console.error('Error obtaining access token:', error);
-    res.status(500).send('Authentication failed');
+    console.error('Error obtaining access token:', error.response?.data || error.message);
+    res.status(500).send(`Authentication failed: ${error.message}`);
   }
+});
+
+
+
+// Display user dashboard
+app.get('/dashboard', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  res.send(`<h1>Welcome, ${req.session.user.name}</h1><p>Email: ${req.session.user.email}</p>`);
+});
+
+// Logout route
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/login');
+  });
 });
 
 app.listen(3000, () => {
   console.log('Server running at http://localhost:3000');
 });
 
-const jwt = require('jsonwebtoken');
-
-app.get('/callback', async (req, res) => {
-  const { code } = req.query;
-
-  try {
-    const tokenParams = {
-      code,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-    };
-
-    const accessToken = await oauth2Client.getToken(tokenParams);
-    const idToken = accessToken.token.id_token;
-
-    const decoded = jwt.decode(idToken);
-    res.json(decoded); // Display user profile info
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Authentication failed');
-  }
-});
-
-const session = require('express-session');
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
-app.get('/callback', async (req, res) => {
-  const { code } = req.query;
-  const tokenParams = {
-    code,
-    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-  };
-
+try {
   const accessToken = await oauth2Client.getToken(tokenParams);
-  req.session.user = jwt.decode(accessToken.token.id_token);
-  res.redirect('/dashboard');
-});
-
-app.get('/dashboard', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-  res.send(`Welcome, ${req.session.user.name}`);
-});
+  console.log('Token response:', accessToken.token);
+  res.json({
+    access_token: accessToken.token.access_token,
+    id_token: accessToken.token.id_token,
+  });
+} catch (error) {
+  console.error('Error obtaining access token:', error);
+  res.status(500).send(`Authentication failed: ${error.message}`);
+}

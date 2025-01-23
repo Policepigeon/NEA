@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login with Google</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .login-btn {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .login-btn:hover {
+            background-color: #357ae8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Login to Your Account</h1>
+    <button class="login-btn" onclick="loginWithGoogle()">Login with Google</button>
+
+    <script>
+        function loginWithGoogle() {
+            window.location.href = 'http://localhost:3000/login'; // Backend login route
+        }
+    </script>
+</body>
+</html>
+
+<script>
+  function loginWithGoogle() {
+      window.location.href = 'http://localhost:3000/login';
+  }
+
+  // If redirected back with user data
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('name') && params.has('email')) {
+      document.body.innerHTML = `
+          <h1>Welcome, ${params.get('name')}</h1>
+          <p>Email: ${params.get('email')}</p>
+      `;
+  }
+</script>
+
