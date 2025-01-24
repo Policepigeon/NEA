@@ -67,6 +67,8 @@ app.get('/callback', async (req, res) => {
     const accessToken = await oauth2Client.getToken(tokenParams);
     const idToken = accessToken.token.id_token;
     const userInfo = jwt.decode(idToken);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({ success: true });
 
     req.session.user = userInfo;
     res.redirect('/dashboard');
