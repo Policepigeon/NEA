@@ -53,7 +53,12 @@ app.get('/callback', async (req, res) => {
         res.status(500).send('Authentication failed');
     }
 });
+const path = require('path');
 
+// Serve index.html at root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
