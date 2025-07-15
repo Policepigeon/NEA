@@ -1,4 +1,5 @@
 const express = require('express');
+// use google auth library instead of simple-oauth2 or oauth2-server
 const { OAuth2Client } = require('google-auth-library');
 //call google-auth-library to handle OAuth2 authentication
 //and dotenv to manage environment variables
@@ -52,6 +53,7 @@ app.get('/callback', async (req, res) => {
         const payload = ticket.getPayload();
 
         res.redirect(`/?name=${encodeURIComponent(payload.name)}&email=${encodeURIComponent(payload.email)}`);
+        //catching the errors when authentication fails
     } catch (err) {
         console.error(err);
         res.status(500).send('Authentication failed');
