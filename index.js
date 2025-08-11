@@ -38,11 +38,20 @@ app.get('/login', (req, res) => {
     res.redirect(authorizeUrl);
 });
 
-// callbacks and response handling
+//use the sqlite module to create a db
+// Ensure users table exists
+const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
+db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE,
+    name TEXT,
+    client_id TEXT
+)`);
+
+//changed the callback so that it handles oauth and puts in the db
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
     if (!code) return res.status(400).send('No code provided');
-//try getting the tokens to return later
     try {
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
@@ -53,17 +62,23 @@ app.get('/callback', async (req, res) => {
         });
         const payload = ticket.getPayload();
 
+        // Insert user if not exists
+        db.run(
+            `INSERT OR IGNORE INTO users (email, name, client_id) VALUES (?, ?, ?)`,
+            [payload.email, payload.name, CLIENT_ID],
+            function (err) {
+                if (err) {
+                    console.error('DB error:', err);
+                }
+            }
+        );
+
         res.redirect(`/?name=${encodeURIComponent(payload.name)}&email=${encodeURIComponent(payload.email)}`);
-        //catching the errors when authentication fails
     } catch (err) {
         console.error(err);
         res.status(500).send('Authentication failed');
     }
 });
-
-const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
-//FOR USERS IF IT DOES NOT EXIST, ensures an individual user can only register once with an email and linked client_id
-db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, name TEXT, client_id TEXT UNIQUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, permissions TEXT DEFAULT 'none')");
 
 // server pawt <3
 app.listen(PORT, () => {
