@@ -1,4 +1,5 @@
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
 // use google auth library instead of simple-oauth2 or oauth2-server
 const { OAuth2Client } = require('google-auth-library');
 //call google-auth-library to handle OAuth2 authentication
@@ -59,6 +60,11 @@ app.get('/callback', async (req, res) => {
         res.status(500).send('Authentication failed');
     }
 });
+
+const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
+//FOR USERS IF IT DOES NOT EXIST, ensures an individual user can only register once with an email and linked client_id
+db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, name TEXT, client_id TEXT UNIQUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, permissions TEXT DEFAULT 'none')");
+
 // server pawt <3
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
