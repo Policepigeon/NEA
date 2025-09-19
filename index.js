@@ -206,16 +206,6 @@ app.post('/check-role', async (req, res) => {
 });
 
 app.get('/teacher', (req, res) => {
-    //legacy code being brought in line with rest of code
-   /* res.send(`
-        <html>
-        <head><title>Teacher</title></head>
-        <body style="font-family: Arial; text-align: center; padding-top: 80px;">
-            <h1>You are a teacher for this class.</h1>
-            <p>Access granted.</p>
-        </body>
-        </html>
-    `); */
     res.redirect('/templates/teachers.html');
 });
 
@@ -225,15 +215,6 @@ app.get('/student', (req, res) => {
 });
 
 app.get('/unauthorized', (req, res) => {
-    //same here as with teachers
-    /* res.status(200).send(`
-        <html>
-        <head><title>Not authorized</title></head>
-        <body style="font-family: Arial; text-align: center; padding-top: 80px;">
-            <h1>You are not authorized for this class.</h1>
-        </body>
-        </html>
-    `); */
     res.redirect('/templates/invalids.html');
 });
 
