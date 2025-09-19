@@ -130,19 +130,7 @@ app.get('/classroom', (req, res) => {
     if (!req.session || !req.session.tokens || !req.session.user) {
         return res.redirect('/');
     }
-    res.send(`
-        <html>
-        <head><title>Enter Classroom URL</title></head>
-        <body style="font-family: Arial; max-width: 720px; margin: 40px auto;">
-            <h1>Hello, ${req.session.user.name}</h1>
-            <p>Paste the Google Classroom course URL to continue.</p>
-            <form method="POST" action="/check-role">
-                <input type="url" name="course_url" placeholder="https://classroom.google.com/c/..." style="width: 100%; padding: 12px; font-size: 16px;" required />
-                <button type="submit" style="margin-top: 16px; padding: 12px 20px; font-size: 16px;">Continue</button>
-            </form>
-        </body>
-        </html>
-    `);
+    res.redirect(`/templates/classlink.html`);
 });
 
 // check role and redirect accordingly
