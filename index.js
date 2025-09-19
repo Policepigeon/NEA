@@ -217,7 +217,8 @@ app.post('/check-role', async (req, res) => {
 });
 
 app.get('/teacher', (req, res) => {
-    res.send(`
+    //legacy code being brought in line with rest of code
+   /* res.send(`
         <html>
         <head><title>Teacher</title></head>
         <body style="font-family: Arial; text-align: center; padding-top: 80px;">
@@ -225,23 +226,26 @@ app.get('/teacher', (req, res) => {
             <p>Access granted.</p>
         </body>
         </html>
-    `);
+    `); */
+    res.redirect('/templates/teachers.html');
 });
 
 app.get('/student', (req, res) => {
-    // redirect to local python runner page
-    res.redirect('/Pyodide-runner.html');
+    // redirect to students template -- removed python runner to make it in line with rest of the program
+    res.redirect('/templates/students.html');
 });
 
 app.get('/unauthorized', (req, res) => {
-    res.status(200).send(`
+    //same here as with teachers
+    /* res.status(200).send(`
         <html>
         <head><title>Not authorized</title></head>
         <body style="font-family: Arial; text-align: center; padding-top: 80px;">
             <h1>You are not authorized for this class.</h1>
         </body>
         </html>
-    `);
+    `); */
+    res.redirect('/templates/invalids.html');
 });
 
 // server pawt <3
