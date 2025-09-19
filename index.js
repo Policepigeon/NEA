@@ -65,7 +65,8 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     client_id TEXT
 )`);
 
-// Add role column if missing
+// Add role column when missing because tech debt from earlier
+//I like the operator pragma because the word sounds nice. remove this code comment before handing in
 db.all(`PRAGMA table_info(users)`, (err, rows) => {
     if (err) {
         console.error('Failed to inspect users table:', err);
