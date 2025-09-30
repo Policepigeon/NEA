@@ -239,11 +239,79 @@ app.get('/unauthorized', (req, res) => {
 });
 
 // ---------------------- Code Files API ----------------------
+
+// Object-oriented Teacher Dashboard for viewing student work
+class TeacherDashboard {
+    constructor(db) {
+        this.db = db;
+    }
+
+    // Get all students in a course (from users table with role='student')
+    async getStudentsInCourse(courseId) {
+        return new Promise((resolve, reject) => {
+            this.db.all(
+                `SELECT email, name, role FROM users WHERE role = 'student' ORDER BY name`,
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows || []);
+                }
+            );
+        });
+    }
+
+    // Get all files for a specific student
+    async getStudentFiles(studentEmail) {
+        return new Promise((resolve, reject) => {
+            this.db.all(
+                `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? ORDER BY updated_at DESC`,
+                [studentEmail],
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows || []);
+                }
+            );
+        });
+    }
+
+    // Get all student work across all students
+    async getAllStudentWork() {
+        const students = await this.getStudentsInCourse();
+        const allWork = [];
+        
+        for (const student of students) {
+            const files = await this.getStudentFiles(student.email);
+            allWork.push({
+                student: student,
+                files: files
+            });
+        }
+        
+        return allWork;
+    }
+}
+
+const teacherDashboard = new TeacherDashboard(codeDb);
+
 function requireAuth(req, res, next) {
     if (!req.session || !req.session.user) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
     next();
+}
+
+// Check if user is a teacher
+function requireTeacher(req, res, next) {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    db.get(`SELECT role FROM users WHERE email = ?`, [req.session.user.email], (err, row) => {
+        if (err) return res.status(500).json({ error: 'DB error' });
+        if (!row || row.role !== 'teacher') {
+            return res.status(403).json({ error: 'Teacher access required' });
+        }
+        next();
+    });
 }
 
 // List files for current user
@@ -300,6 +368,48 @@ app.delete('/api/files/:filename', requireAuth, (req, res) => {
             return res.json({ ok: true });
         }
     );
+});
+
+// ---------------------- Teacher API ----------------------
+
+// Get all students and their work
+app.get('/api/teacher/students', requireTeacher, async (req, res) => {
+    try {
+        const allWork = await teacherDashboard.getAllStudentWork();
+        res.json(allWork);
+    } catch (err) {
+        console.error('Teacher dashboard error:', err);
+        res.status(500).json({ error: 'Failed to fetch student work' });
+    }
+});
+
+// Get specific student's files
+app.get('/api/teacher/students/:email/files', requireTeacher, async (req, res) => {
+    try {
+        const files = await teacherDashboard.getStudentFiles(req.params.email);
+        res.json(files);
+    } catch (err) {
+        console.error('Teacher student files error:', err);
+        res.status(500).json({ error: 'Failed to fetch student files' });
+    }
+});
+
+// Get specific file content for a student
+app.get('/api/teacher/students/:email/files/:filename', requireTeacher, async (req, res) => {
+    try {
+        codeDb.get(
+            `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? AND filename = ?`,
+            [req.params.email, req.params.filename],
+            (err, row) => {
+                if (err) return res.status(500).json({ error: 'DB error' });
+                if (!row) return res.status(404).json({ error: 'File not found' });
+                res.json(row);
+            }
+        );
+    } catch (err) {
+        console.error('Teacher file content error:', err);
+        res.status(500).json({ error: 'Failed to fetch file content' });
+    }
 });
 
 // server pawt <3
