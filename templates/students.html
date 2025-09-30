@@ -15,14 +15,91 @@
 </head>
 <body>
     <h1>Run Python Code Locally</h1>
-    <!-- //pretty placeholder in the text box -->
-    <textarea id="python-code" placeholder="Type your Python code here..."></textarea><br>
-    <button onclick="runPython()">Run Python</button>
+    <div style="margin: 12px 0;">
+        <input id="filename" placeholder="filename.py" style="padding: 8px; width: 240px;" />
+        <button onclick="saveFile()">Save</button>
+        <button onclick="newFile()">New</button>
+        <button onclick="deleteFile()">Delete</button>
+    </div>
+    <div style="display:flex; gap: 24px;">
+        <div style="flex: 2;">
+            <textarea name = "pycodethroughhack"  id="python-code" placeholder="Type your Python code here..."></textarea><br>
+            <button onclick="runPython()">Run Python</button>
+        </div>
+        <div style="flex: 1;">
+            <h3>Your files</h3>
+            <ul id="file-list"></ul>
+        </div>
+    </div>
     <h2>Output:</h2>
     <pre id="output"></pre>
     <script>
         //load the pyodide library
         let pyodideReadyPromise = loadPyodide();
+
+        async function refreshList() {
+            const ul = document.getElementById('file-list');
+            ul.innerHTML = '';
+            try {
+                const res = await fetch('/api/files');
+                if (!res.ok) throw new Error('Failed to list files');
+                const rows = await res.json();
+                for (const r of rows) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = r.filename;
+                    a.onclick = async (e) => {
+                        e.preventDefault();
+                        await openFile(r.filename);
+                    };
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function openFile(name) {
+            try {
+                const res = await fetch(`/api/files/${encodeURIComponent(name)}`);
+                if (!res.ok) throw new Error('Not found');
+                const data = await res.json();
+                document.getElementById('filename').value = data.filename;
+                document.getElementById('python-code').value = data.content;
+            } catch (e) {
+                alert('Could not open file');
+            }
+        }
+
+        async function saveFile() {
+            const filename = document.getElementById('filename').value.trim();
+            const content = document.getElementById('python-code').value;
+            if (!filename) return alert('Enter a filename');
+            const res = await fetch('/api/files', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, content })
+            });
+            if (!res.ok) return alert('Save failed');
+            await refreshList();
+        }
+
+        async function deleteFile() {
+            const filename = document.getElementById('filename').value.trim();
+            if (!filename) return alert('Enter a filename');
+            if (!confirm(`Delete ${filename}?`)) return;
+            const res = await fetch(`/api/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+            if (!res.ok) return alert('Delete failed');
+            document.getElementById('python-code').value = '';
+            await refreshList();
+        }
+
+        function newFile() {
+            document.getElementById('filename').value = '';
+            document.getElementById('python-code').value = '';
+        }
 
         async function runPython() {
             const code = document.getElementById('python-code').value;
@@ -45,6 +122,9 @@ sys.stdout = sys.stderr = StringIO()
                 outputElem.textContent = err;
             }
         }
+
+        // initial list load
+        refreshList();
     </script>
 
 </body>

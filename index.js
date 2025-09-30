@@ -82,6 +82,26 @@ db.all(`PRAGMA table_info(users)`, (err, rows) => {
     }
 });
 
+// Separate DB for code files
+const codeDb = new sqlite3.Database(path.join(__dirname, 'codefiles.db'));
+codeDb.run(`CREATE TABLE IF NOT EXISTS files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_email TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(owner_email, filename)
+)`);
+
+// Update trigger for updated_at
+codeDb.run(`CREATE TRIGGER IF NOT EXISTS trg_files_updated_at
+AFTER UPDATE ON files
+FOR EACH ROW
+BEGIN
+    UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
+END;`);
+
 //changed the callback so that it handles oauth and puts in the db
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
@@ -216,6 +236,70 @@ app.get('/student', (req, res) => {
 
 app.get('/unauthorized', (req, res) => {
     res.redirect('/templates/invalids.html');
+});
+
+// ---------------------- Code Files API ----------------------
+function requireAuth(req, res, next) {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    next();
+}
+
+// List files for current user
+app.get('/api/files', requireAuth, (req, res) => {
+    codeDb.all(`SELECT id, filename, created_at, updated_at FROM files WHERE owner_email = ? ORDER BY updated_at DESC`,
+        [req.session.user.email],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: 'DB error' });
+            res.json(rows || []);
+        }
+    );
+});
+
+// Get one file content by filename
+app.get('/api/files/:filename', requireAuth, (req, res) => {
+    codeDb.get(`SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? AND filename = ?`,
+        [req.session.user.email, req.params.filename],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: 'DB error' });
+            if (!row) return res.status(404).json({ error: 'Not found' });
+            res.json(row);
+        }
+    );
+});
+
+// Create or update a file
+app.post('/api/files', requireAuth, (req, res) => {
+    const { filename, content } = req.body || {};
+    if (!filename || typeof filename !== 'string') {
+        return res.status(400).json({ error: 'filename required' });
+    }
+    if (typeof content !== 'string') {
+        return res.status(400).json({ error: 'content required' });
+    }
+    codeDb.run(
+        `INSERT INTO files (owner_email, filename, content) VALUES (?, ?, ?)
+         ON CONFLICT(owner_email, filename) DO UPDATE SET content = excluded.content, updated_at = CURRENT_TIMESTAMP`,
+        [req.session.user.email, filename, content],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'DB error' });
+            return res.json({ ok: true });
+        }
+    );
+});
+
+// Delete a file
+app.delete('/api/files/:filename', requireAuth, (req, res) => {
+    codeDb.run(
+        `DELETE FROM files WHERE owner_email = ? AND filename = ?`,
+        [req.session.user.email, req.params.filename],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'DB error' });
+            if (this.changes === 0) return res.status(404).json({ error: 'Not found' });
+            return res.json({ ok: true });
+        }
+    );
 });
 
 // server pawt <3
