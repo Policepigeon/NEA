@@ -42,14 +42,35 @@
             <div id="student-list" class="student-list">
                 <!-- Student cards will be populated here -->
             </div>
+            <h2 style="margin-top:24px;">Create Assignment</h2>
+            <div>
+                <input id="ass-title" placeholder="Title" style="padding:8px; width: 300px;" />
+                <input id="ass-due" type="datetime-local" style="padding:8px;" />
+            </div>
+            <div style="margin-top:8px;">
+                <textarea id="ass-desc" placeholder="Description" style="width: 100%; height: 100px;"></textarea>
+            </div>
+            <button onclick="createAssignment()">Create</button>
+            <h3>Assignments</h3>
+            <ul id="ass-list"></ul>
         </div>
         
         <div id="python-tab" class="tab-content python-runner">
             <h2>Python Code Runner</h2>
             <input id="teacher-filename" placeholder="filename.py" style="padding: 8px; width: 240px;" />
             <button onclick="teacherSaveFile()">Save</button>
-            <textarea id="python-code" placeholder="Type your Python code here..."></textarea><br>
-            <button onclick="runPython()">Run Python</button>
+            <button onclick="teacherNewFile()">New</button>
+            <button onclick="teacherDeleteFile()">Delete</button>
+            <div style="display:flex; gap: 24px;">
+                <div style="flex: 2;">
+                    <textarea id="python-code" placeholder="Type your Python code here..."></textarea><br>
+                    <button onclick="runPython()">Run Python</button>
+                </div>
+                <div style="flex: 1;">
+                    <h3>Your files</h3>
+                    <ul id="teacher-file-list"></ul>
+                </div>
+            </div>
             <h3>Output:</h3>
             <pre id="output"></pre>
         </div>
@@ -59,6 +80,7 @@
         let pyodideReadyPromise = loadPyodide();
         let currentStudentWork = null;
         let editor = null;
+        let teacherFilesLoaded = false;
 
         function showTab(tabName) {
             // Hide all tabs
@@ -137,6 +159,34 @@
             }
         }
 
+        async function createAssignment() {
+            const title = document.getElementById('ass-title').value.trim();
+            const description = document.getElementById('ass-desc').value.trim();
+            const dueDate = document.getElementById('ass-due').value; // local datetime
+            if (!title) return alert('Enter a title');
+            const res = await fetch('/api/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description, dueDate })
+            });
+            if (!res.ok) return alert('Failed to create');
+            await refreshAssignments();
+        }
+
+        async function refreshAssignments() {
+            const ul = document.getElementById('ass-list');
+            ul.innerHTML = '';
+            const res = await fetch('/api/assignments');
+            if (!res.ok) return;
+            const items = await res.json();
+            for (const a of items) {
+                const li = document.createElement('li');
+                const due = a.dueDate ? `${a.dueDate.year}-${String(a.dueDate.month).padStart(2,'0')}-${String(a.dueDate.day).padStart(2,'0')}` : 'No due date';
+                li.textContent = `${a.title} - ${due}`;
+                ul.appendChild(li);
+            }
+        }
+
         async function runPython() {
             const code = editor ? editor.getValue() : document.getElementById('python-code').value;
             const outputElem = document.getElementById('output');
@@ -167,6 +217,42 @@ sys.stdout = sys.stderr = StringIO()
             editor.setSize('100%', 300);
         }
 
+        async function teacherRefreshList() {
+            const ul = document.getElementById('teacher-file-list');
+            ul.innerHTML = '';
+            try {
+                const res = await fetch('/api/files');
+                if (!res.ok) throw new Error('Failed to list files');
+                const rows = await res.json();
+                for (const r of rows) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = r.filename;
+                    a.onclick = async (e) => {
+                        e.preventDefault();
+                        await teacherOpenFile(r.filename);
+                    };
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function teacherOpenFile(name) {
+            try {
+                const res = await fetch(`/api/files/${encodeURIComponent(name)}`);
+                if (!res.ok) throw new Error('Not found');
+                const data = await res.json();
+                document.getElementById('teacher-filename').value = data.filename;
+                if (editor) { editor.setValue(data.content); } else { document.getElementById('python-code').value = data.content; }
+            } catch (e) {
+                alert('Could not open file');
+            }
+        }
+
         async function teacherSaveFile() {
             const filename = document.getElementById('teacher-filename').value.trim();
             const content = editor ? editor.getValue() : document.getElementById('python-code').value;
@@ -177,12 +263,27 @@ sys.stdout = sys.stderr = StringIO()
                 body: JSON.stringify({ filename, content })
             });
             if (!res.ok) return alert('Save failed');
-            alert('Saved');
+            await teacherRefreshList();
+        }
+        async function teacherDeleteFile() {
+            const filename = document.getElementById('teacher-filename').value.trim();
+            if (!filename) return alert('Enter a filename');
+            if (!confirm(`Delete ${filename}?`)) return;
+            const res = await fetch(`/api/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+            if (!res.ok) return alert('Delete failed');
+            if (editor) { editor.setValue(''); } else { document.getElementById('python-code').value = ''; }
+            await teacherRefreshList();
+        }
+        function teacherNewFile() {
+            document.getElementById('teacher-filename').value = '';
+            if (editor) { editor.setValue(''); } else { document.getElementById('python-code').value = ''; }
         }
 
         // Load student work on page load
         loadStudentWork();
         initEditor();
+        teacherRefreshList();
+        refreshAssignments();
     </script>
 </body>
 </html>

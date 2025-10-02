@@ -34,7 +34,7 @@ app.use(session({
     }
 }));
 
-//express serves the static html file
+//express serves the static html files
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -51,6 +51,9 @@ app.get('/login', (req, res) => {
             'email',
             'https://www.googleapis.com/auth/classroom.courses.readonly',
             'https://www.googleapis.com/auth/classroom.rosters.readonly',
+            'https://www.googleapis.com/auth/classroom.courses',
+            'https://www.googleapis.com/auth/classroom.coursework.me',
+            'https://www.googleapis.com/auth/classroom.coursework.students',
         ],
         prompt: 'consent',
         include_granted_scopes: true,
@@ -69,12 +72,13 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
 )`);
 
 // Add role column when missing because tech debt from earlier
-//I like the operator pragma because the word sounds nice. remove this code comment before handing in
+//I like the operator pragma because the word sounds nice. remove this code comment before handing in but for now it makes me smile when im tearing my hair out then realising it was all just because i forgot to give myself some scopes
 db.all(`PRAGMA table_info(users)`, (err, rows) => {
     if (err) {
         console.error('Failed to inspect users table:', err);
         return;
     }
+    // if you has the  role then has the role else you failed to has the role. 
     const hasRole = rows.some((r) => r.name === 'role');
     if (!hasRole) {
         db.run(`ALTER TABLE users ADD COLUMN role TEXT`, (alterErr) => {
@@ -85,7 +89,7 @@ db.all(`PRAGMA table_info(users)`, (err, rows) => {
     }
 });
 
-// Separate DB for code files
+// Separate DB for code files <<< good idea it worked out better in the end. well done for not creating tech debt for yourself later on <<< to future isaac please tell me this is true
 const codeDb = new sqlite3.Database(path.join(__dirname, 'codefiles.db'));
 codeDb.run(`CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,6 +121,7 @@ app.get('/callback', async (req, res) => {
             idToken: tokens.id_token,
             audience: CLIENT_ID,
         });
+        //gets to insert into table. tokens are seperated from the users in the api?
         const payload = ticket.getPayload();
         req.session.user = {
             email: payload.email,
@@ -148,7 +153,7 @@ function getCourseIdFromUrl(url) {
     return match ? match[1] : null;
 }
 
-// classroom URL input screen
+// classroom URL input screen Wahoo! dynamically making links :)
 app.get('/classroom', (req, res) => {
     if (!req.session || !req.session.tokens || !req.session.user) {
         return res.redirect('/');
@@ -157,6 +162,7 @@ app.get('/classroom', (req, res) => {
 });
 
 // check role and redirect accordingly
+//also checking nothing lost, here be dangers
 app.post('/check-role', async (req, res) => {
     if (!req.session || !req.session.tokens || !req.session.user) {
         return res.redirect('/');
@@ -183,9 +189,12 @@ app.post('/check-role', async (req, res) => {
                     courseStates: 'ACTIVE',
                 },
             });
+            /* for future isaac. this black magic needs explaining. conditional array assignment. first, check if its an array response. 
+            then set it to true. then if is true assign courses t ocourses, else false and assign empty array to courses, as else things break*/
             const courses = Array.isArray(listResp.data.courses) ? listResp.data.courses : [];
             for (const c of courses) {
                 const link = c.alternateLink || '';
+                //if all true =true
                 if (link.includes(`/c/${webCourseId}`) || (courseUrl && courseUrl.startsWith(link))) {
                     numericCourseId = c.id;
                     break;
@@ -197,6 +206,7 @@ app.post('/check-role', async (req, res) => {
         if (!numericCourseId) {
             return res.redirect('/unauthorized');
         }
+        req.session.courseId = numericCourseId;
 
         // Check if the current user is a teacher in this course
         try {
@@ -241,9 +251,8 @@ app.get('/unauthorized', (req, res) => {
     res.redirect('/templates/invalids.html');
 });
 
-// ---------------------- Code Files API ----------------------
 
-// Repositories and Services (OOP)
+// Repositories and Services << also where i get my OOP Points From Please Mr Barrow
 class UserRepository {
     constructor(usersDb) {
         this.usersDb = usersDb;
@@ -253,6 +262,7 @@ class UserRepository {
         return new Promise((resolve, reject) => {
             this.usersDb.get(`SELECT * FROM users WHERE email = ?`, [email], (err, row) => {
                 if (err) reject(err); else resolve(row || null);
+                //if error throws then pass to reject, check if true (not null/undef) then return rows or null. use many times, modify as required
             });
         });
     }
@@ -329,7 +339,7 @@ class TeacherService {
         return results;
     }
 }
-
+//define userrepos for the files and filerepo. done with oop
 const userRepo = new UserRepository(db);
 const fileRepo = new FileRepository(codeDb);
 const teacherService = new TeacherService(userRepo, fileRepo);
@@ -367,7 +377,70 @@ app.get('/api/files', requireAuth, (req, res) => {
     );
 });
 
-// Get one file content by filename
+function requireCourse(req, res, next) {
+    if (!req.session || !req.session.courseId) {
+        return res.status(400).json({ error: 'No course selected' });
+    }
+    next();
+}
+
+// Create assignment (teacher only)
+app.post('/api/assignments', requireTeacher, requireCourse, async (req, res) => {
+    try {
+        oauth2Client.setCredentials(req.session.tokens);
+        const courseId = req.session.courseId;
+        const { title, description, dueDate } = req.body || {};
+        if (!title) return res.status(400).json({ error: 'title required' });
+
+        const coursework = {
+            title,
+            description: description || '',
+            workType: 'ASSIGNMENT',
+            state: 'PUBLISHED',
+        };
+        if (dueDate) {
+            // date string as normalised but converted t ostring as required
+            const d = new Date(dueDate);
+            coursework.dueDate = { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+            coursework.dueTime = { hours: d.getUTCHours(), minutes: d.getUTCMinutes() };
+        }
+
+        const resp = await oauth2Client.request({
+            url: `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/courseWork`,
+            method: 'POST',
+            data: coursework,
+        });
+        res.json(resp.data);
+    } catch (err) {
+        console.error('Create assignment failed:', err.response?.data || err);
+        res.status(500).json({ error: 'Failed to create assignment' });
+    }
+});
+
+// List assignments for current user course (both teacher and student)
+app.get('/api/assignments', requireAuth, requireCourse, async (req, res) => {
+    try {
+        oauth2Client.setCredentials(req.session.tokens);
+        const courseId = req.session.courseId;
+        const resp = await oauth2Client.request({
+            url: `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/courseWork`,
+            method: 'GET'
+        });
+        const items = Array.isArray(resp.data.courseWork) ? resp.data.courseWork : [];
+        //sort due soonest outside of array, array should store things in the order they were created. can use later too.
+        items.sort((a, b) => {
+            const da = a.dueDate ? Date.UTC(a.dueDate.year, (a.dueDate.month || 1) - 1, a.dueDate.day || 1, a.dueTime?.hours || 0, a.dueTime?.minutes || 0) : Infinity;
+            const db = b.dueDate ? Date.UTC(b.dueDate.year, (b.dueDate.month || 1) - 1, b.dueDate.day || 1, b.dueTime?.hours || 0, b.dueTime?.minutes || 0) : Infinity;
+            return da - db;
+        });
+        res.json(items);
+    } catch (err) {
+        console.error('List assignments failed:', err.response?.data || err);
+        res.status(500).json({ error: 'Failed to list assignments' });
+    }
+});
+
+// get one file content by filename
 app.get('/api/files/:filename', requireAuth, (req, res) => {
     codeDb.get(`SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? AND filename = ?`,
         [req.session.user.email, req.params.filename],
@@ -424,7 +497,6 @@ app.get('/api/me', requireAuth, (req, res) => {
     });
 });
 
-// ---------------------- Teacher API ----------------------
 
 // Get all students and their work
 app.get('/api/teacher/students', requireTeacher, async (req, res) => {

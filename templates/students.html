@@ -33,6 +33,8 @@
         <div style="flex: 1;">
             <h3>Your files</h3>
             <ul id="file-list"></ul>
+            <h3>To Do</h3>
+            <ul id="todo-list"></ul>
         </div>
     </div>
     <h2>Output:</h2>
@@ -140,6 +142,22 @@ sys.stdout = sys.stderr = StringIO()
             }
         }
 
+        async function refreshTodo() {
+            try {
+                const res = await fetch('/api/assignments');
+                if (!res.ok) return;
+                const items = await res.json();
+                const ul = document.getElementById('todo-list');
+                ul.innerHTML = '';
+                for (const a of items) {
+                    const li = document.createElement('li');
+                    const due = a.dueDate ? `${a.dueDate.year}-${String(a.dueDate.month).padStart(2,'0')}-${String(a.dueDate.day).padStart(2,'0')}` : 'No due date';
+                    li.textContent = `${a.title} - ${due}`;
+                    ul.appendChild(li);
+                }
+            } catch (e) {}
+        }
+
         function initEditor() {
             const textarea = document.getElementById('python-code');
             editor = CodeMirror.fromTextArea(textarea, {
@@ -153,6 +171,7 @@ sys.stdout = sys.stderr = StringIO()
 
         // initial list load
         refreshList();
+        refreshTodo();
         initEditor();
     </script>
 
