@@ -12,6 +12,10 @@
         button { margin-top: 10px; font-size: 16px; }
         pre { background: #f4f4f4; padding: 10px; }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/python/python.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.js"></script>
 </head>
 <body>
     <h1>Run Python Code Locally</h1>
@@ -36,6 +40,7 @@
     <script>
         //load the pyodide library
         let pyodideReadyPromise = loadPyodide();
+        let editor = null;
 
         async function refreshList() {
             const ul = document.getElementById('file-list');
@@ -67,7 +72,7 @@
                 if (!res.ok) throw new Error('Not found');
                 const data = await res.json();
                 document.getElementById('filename').value = data.filename;
-                document.getElementById('python-code').value = data.content;
+                if (editor) { editor.setValue(data.content); } else { document.getElementById('python-code').value = data.content; }
             } catch (e) {
                 alert('Could not open file');
             }
@@ -75,14 +80,26 @@
 
         async function saveFile() {
             const filename = document.getElementById('filename').value.trim();
-            const content = document.getElementById('python-code').value;
+            const content = editor ? editor.getValue() : document.getElementById('python-code').value;
             if (!filename) return alert('Enter a filename');
+            let me;
+            try {
+                const meRes = await fetch('/api/me');
+                if (!meRes.ok) throw new Error('Not signed in');
+                me = await meRes.json();
+            } catch (e) {
+                alert('You are not signed in. Please login again.');
+                return;
+            }
             const res = await fetch('/api/files', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename, content })
             });
-            if (!res.ok) return alert('Save failed');
+            if (!res.ok) {
+                const msg = await res.text().catch(()=>'');
+                return alert('Save failed: ' + (msg || res.status));
+            }
             await refreshList();
         }
 
@@ -92,17 +109,17 @@
             if (!confirm(`Delete ${filename}?`)) return;
             const res = await fetch(`/api/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
             if (!res.ok) return alert('Delete failed');
-            document.getElementById('python-code').value = '';
+            if (editor) { editor.setValue(''); } else { document.getElementById('python-code').value = ''; }
             await refreshList();
         }
 
         function newFile() {
             document.getElementById('filename').value = '';
-            document.getElementById('python-code').value = '';
+            if (editor) { editor.setValue(''); } else { document.getElementById('python-code').value = ''; }
         }
 
         async function runPython() {
-            const code = document.getElementById('python-code').value;
+            const code = editor ? editor.getValue() : document.getElementById('python-code').value;
             const outputElem = document.getElementById('output');
             outputElem.textContent = "Running...";
             try {
@@ -123,8 +140,20 @@ sys.stdout = sys.stderr = StringIO()
             }
         }
 
+        function initEditor() {
+            const textarea = document.getElementById('python-code');
+            editor = CodeMirror.fromTextArea(textarea, {
+                mode: 'python',
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                theme: 'default'
+            });
+            editor.setSize('100%', 300);
+        }
+
         // initial list load
         refreshList();
+        initEditor();
     </script>
 
 </body>

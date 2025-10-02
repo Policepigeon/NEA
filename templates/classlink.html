@@ -1,11 +1,37 @@
-<html>
-        <head><title>Enter Classroom URL</title></head>
-        <body style="font-family: Arial; max-width: 720px; margin: 40px auto;">
-            <h1>Hello, ${req.session.user.name}</h1>
-            <p>Paste the Google Classroom course URL to continue.</p>
-            <form method="POST" action="/check-role">
-                <input type="url" name="course_url" placeholder="https://classroom.google.com/c/..." style="width: 100%; padding: 12px; font-size: 16px;" required />
-                <button type="submit" style="margin-top: 16px; padding: 12px 20px; font-size: 16px;">Continue</button>
-            </form>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enter Classroom URL</title>
+    <style>
+        body { font-family: Arial; max-width: 720px; margin: 40px auto; }
+        label { display: block; margin-top: 12px; }
+        input[type="text"], input[type="url"] { width: 100%; padding: 12px; font-size: 16px; }
+        button { margin-top: 16px; padding: 12px 20px; font-size: 16px; }
+    </style>
+    <script>
+        async function init() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    const me = await res.json();
+                    document.getElementById('hello').textContent = `Hello, ${me.name || me.email}`;
+                    document.getElementById('username').value = me.name || '';
+                }
+            } catch (_) {}
+        }
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</head>
+<body>
+    <h1 id="hello">Hello</h1>
+    <p>Paste the Google Classroom course URL to continue.</p>
+    <form method="POST" action="/check-role">
+        <label>Username</label>
+        <input id="username" type="text" placeholder="Your name" />
+        <label>Classroom URL</label>
+        <input type="url" name="course_url" placeholder="https://classroom.google.com/c/..." required />
+        <button type="submit">Continue</button>
+    </form>
+</body>
+</html>

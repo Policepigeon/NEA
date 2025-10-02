@@ -29,6 +29,9 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'dev_session_secret',
     resave: false,
     saveUninitialized: false,
+    cookie: {
+        sameSite: 'lax'
+    }
 }));
 
 //express serves the static html file
@@ -168,7 +171,7 @@ app.post('/check-role', async (req, res) => {
     try {
         oauth2Client.setCredentials(req.session.tokens);
 
-        // Resolve numeric course id by listing user's courses and matching alternateLink
+        // Resolve numeric course id by listing user's courses and matching Link
         let pageToken = undefined;
         let numericCourseId = undefined;
         do {
@@ -240,57 +243,96 @@ app.get('/unauthorized', (req, res) => {
 
 // ---------------------- Code Files API ----------------------
 
-// Object-oriented Teacher Dashboard for viewing student work
-class TeacherDashboard {
-    constructor(db) {
-        this.db = db;
+// Repositories and Services (OOP)
+class UserRepository {
+    constructor(usersDb) {
+        this.usersDb = usersDb;
     }
 
-    // Get all students in a course (from users table with role='student')
-    async getStudentsInCourse(courseId) {
+    getByEmail(email) {
         return new Promise((resolve, reject) => {
-            this.db.all(
-                `SELECT email, name, role FROM users WHERE role = 'student' ORDER BY name`,
-                (err, rows) => {
-                    if (err) reject(err);
-                    else resolve(rows || []);
-                }
-            );
-        });
-    }
-
-    // Get all files for a specific student
-    async getStudentFiles(studentEmail) {
-        return new Promise((resolve, reject) => {
-            this.db.all(
-                `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? ORDER BY updated_at DESC`,
-                [studentEmail],
-                (err, rows) => {
-                    if (err) reject(err);
-                    else resolve(rows || []);
-                }
-            );
-        });
-    }
-
-    // Get all student work across all students
-    async getAllStudentWork() {
-        const students = await this.getStudentsInCourse();
-        const allWork = [];
-        
-        for (const student of students) {
-            const files = await this.getStudentFiles(student.email);
-            allWork.push({
-                student: student,
-                files: files
+            this.usersDb.get(`SELECT * FROM users WHERE email = ?`, [email], (err, row) => {
+                if (err) reject(err); else resolve(row || null);
             });
-        }
-        
-        return allWork;
+        });
+    }
+
+    listStudents() {
+        return new Promise((resolve, reject) => {
+            this.usersDb.all(`SELECT email, name, role FROM users WHERE role = 'student' ORDER BY name`, (err, rows) => {
+                if (err) reject(err); else resolve(rows || []);
+            });
+        });
     }
 }
 
-const teacherDashboard = new TeacherDashboard(codeDb);
+class FileRepository {
+    constructor(filesDb) {
+        this.filesDb = filesDb;
+    }
+
+    listByOwner(email) {
+        return new Promise((resolve, reject) => {
+            this.filesDb.all(
+                `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? ORDER BY updated_at DESC`,
+                [email],
+                (err, rows) => { if (err) reject(err); else resolve(rows || []); }
+            );
+        });
+    }
+
+    getOne(email, filename) {
+        return new Promise((resolve, reject) => {
+            this.filesDb.get(
+                `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? AND filename = ?`,
+                [email, filename],
+                (err, row) => { if (err) reject(err); else resolve(row || null); }
+            );
+        });
+    }
+
+    upsert(email, filename, content) {
+        return new Promise((resolve, reject) => {
+            this.filesDb.run(
+                `INSERT INTO files (owner_email, filename, content) VALUES (?, ?, ?)
+                 ON CONFLICT(owner_email, filename) DO UPDATE SET content = excluded.content, updated_at = CURRENT_TIMESTAMP`,
+                [email, filename, content],
+                function(err) { if (err) reject(err); else resolve(true); }
+            );
+        });
+    }
+
+    delete(email, filename) {
+        return new Promise((resolve, reject) => {
+            this.filesDb.run(
+                `DELETE FROM files WHERE owner_email = ? AND filename = ?`,
+                [email, filename],
+                function(err) { if (err) reject(err); else resolve(this.changes > 0); }
+            );
+        });
+    }
+}
+
+class TeacherService {
+    constructor(userRepo, fileRepo) {
+        this.userRepo = userRepo;
+        this.fileRepo = fileRepo;
+    }
+
+    async getAllStudentWork() {
+        const students = await this.userRepo.listStudents();
+        const results = [];
+        for (const student of students) {
+            const files = await this.fileRepo.listByOwner(student.email);
+            results.push({ student, files });
+        }
+        return results;
+    }
+}
+
+const userRepo = new UserRepository(db);
+const fileRepo = new FileRepository(codeDb);
+const teacherService = new TeacherService(userRepo, fileRepo);
 
 function requireAuth(req, res, next) {
     if (!req.session || !req.session.user) {
@@ -370,12 +412,24 @@ app.delete('/api/files/:filename', requireAuth, (req, res) => {
     );
 });
 
+// current user details (for templates)
+app.get('/api/me', requireAuth, (req, res) => {
+    db.get(`SELECT role, name FROM users WHERE email = ?`, [req.session.user.email], (err, row) => {
+        if (err) return res.status(500).json({ error: 'DB error' });
+        res.json({
+            email: req.session.user.email,
+            name: row?.name || req.session.user.name,
+            role: row?.role || null,
+        });
+    });
+});
+
 // ---------------------- Teacher API ----------------------
 
 // Get all students and their work
 app.get('/api/teacher/students', requireTeacher, async (req, res) => {
     try {
-        const allWork = await teacherDashboard.getAllStudentWork();
+        const allWork = await teacherService.getAllStudentWork();
         res.json(allWork);
     } catch (err) {
         console.error('Teacher dashboard error:', err);
@@ -386,7 +440,7 @@ app.get('/api/teacher/students', requireTeacher, async (req, res) => {
 // Get specific student's files
 app.get('/api/teacher/students/:email/files', requireTeacher, async (req, res) => {
     try {
-        const files = await teacherDashboard.getStudentFiles(req.params.email);
+        const files = await fileRepo.listByOwner(req.params.email);
         res.json(files);
     } catch (err) {
         console.error('Teacher student files error:', err);
@@ -397,15 +451,13 @@ app.get('/api/teacher/students/:email/files', requireTeacher, async (req, res) =
 // Get specific file content for a student
 app.get('/api/teacher/students/:email/files/:filename', requireTeacher, async (req, res) => {
     try {
-        codeDb.get(
-            `SELECT id, filename, content, created_at, updated_at FROM files WHERE owner_email = ? AND filename = ?`,
-            [req.params.email, req.params.filename],
-            (err, row) => {
-                if (err) return res.status(500).json({ error: 'DB error' });
-                if (!row) return res.status(404).json({ error: 'File not found' });
-                res.json(row);
-            }
-        );
+        const row = await fileRepo.getOne(req.params.email, req.params.filename);
+        if (!row) return res.status(404).json({ error: 'File not found' });
+        const uRow = await userRepo.getByEmail(req.params.email);
+        return res.json({
+            ...row,
+            student: { email: req.params.email, name: uRow?.name || req.params.email }
+        });
     } catch (err) {
         console.error('Teacher file content error:', err);
         res.status(500).json({ error: 'Failed to fetch file content' });
