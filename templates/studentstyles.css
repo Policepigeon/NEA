@@ -1,0 +1,18 @@
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 40px;
+  background-color: #1e1e2e;
+}
+
+textarea{
+  width: auto; height: auto; font-size:medium;
+  background-color: #313244;
+}
+
+button{
+  margin-top: auto; font-size: medium; font-weight: bolder;
+}
+
+pre{
+  background: #45475a; padding:10px;
+}
