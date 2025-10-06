@@ -9,8 +9,24 @@ textarea{
   background-color: #313244;
 }
 
+
+
 button{
   margin-top: auto; font-size: medium; font-weight: bolder;
+  background-color: #181825;
+  color: #cdd6f4;
+  border-radius: 10px;
+  border: 10px;
+  border-color: #cdd6f4;
+}
+button:hover{
+  background-color: #74c7ec;
+  color: #cdd6f4;
+  margin-top: auto; font-size: medium; font-weight: bolder;
+  border-radius: 10px;
+  border: 10px;
+  border-color: #11111b;
+
 }
 
 pre{
