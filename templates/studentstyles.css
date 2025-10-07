@@ -4,8 +4,17 @@ body{
   background-color: #eff1f5;
 }
 
+div.pyrunner{
+}
+
+div.pypad{
+}
+
+div.pyenter{
+}
 textarea{
   width: auto; height: auto; font-size:medium;
+  background-color: #eff1f5;
 }
 
 

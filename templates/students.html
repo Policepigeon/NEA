@@ -20,14 +20,21 @@
 </head>
 <body>
     <h1>Run Python Code Locally</h1>
-    <div style="margin: 12px 0;">
+    <div id ="pyrunner"
+        class="pyrunner"
+        style="margin: 12px 0;">
         <input id="filename" placeholder="filename.py" style="padding: 8px; width: 240px;" />
         <button onclick="saveFile()">Save</button>
         <button onclick="newFile()">New</button>
         <button onclick="deleteFile()">Delete</button>
     </div>
-    <div style="display:flex; gap: 24px;">
-        <div style="flex: 2;">
+    <div 
+        class="pypad"
+        id="pypad"
+        style="display:flex; gap: 24px;">
+        <div id="pyenter"
+            class="pyenter"
+            style="flex: 2;">
             <textarea name = "pycodethroughhack"  id="python-code" placeholder="Type your Python code here..."></textarea><br>
             <button onclick="runPython()">Run Python</button>
         </div>
