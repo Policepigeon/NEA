@@ -1,0 +1,33 @@
+body { 
+  font-family: Arial, sans-serif; 
+  text-align: center; 
+  padding-top: 100px;
+  background-color: #eff1f5; }
+.login-btn { 
+  background-color: #181825; 
+  color: #cdd6f4; 
+  border: 10px; 
+  border-color: #cdd6f4;
+  border-radius: 10px;
+  padding: 15px 30px; 
+  font-size: 18px; 
+  cursor: pointer; }
+.login-btn:hover { 
+  background-color: #74c7ec;
+  color: #cdd6f4;
+  border-radius: 10px;
+  border: 10px;
+  border-color: #11111b; }
+
+/*continue not used anymore but might be used again later if i swap back in the old module. swap in the old module in the future if having time to create drop downs, makes things more streamlined but without this it will look confused and messy*/
+.continue-btn { 
+  background-color: #a6e3a1; 
+  color: #cdd6f4; 
+  border-radius: 10px;
+  border: 10px;
+  padding: 15px 30px; 
+  font-size: 18px; 
+  cursor: pointer; 
+  margin-top: 20px; }
+.continue-btn:hover { 
+  background-color: #40a02b; }  
