@@ -9,9 +9,13 @@ div.pyrunner{
 
 div.pypad{
 }
+div.pyrunbutton{
 
-div.pyenter{
 }
+div.rsidebar{
+}
+/*above is just stuff for testing, keep it in so you don't forget what you named things*/
+
 textarea{
   width: auto; height: auto; font-size:medium;
   background-color: #eff1f5;
