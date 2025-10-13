@@ -15,20 +15,21 @@ button {
   margin-top: 16px; 
   padding: 12px 20px; 
   font-size: 16px; 
-  background-color: #181825;
+  background-color: #a6e3a1; 
   color: #cdd6f4;
   border-radius: 10px;
   border: 10px;
   border-color: #cdd6f4;}
 
 button:hover{
-  background-color: #74c7ec;
+  background-color: #40a02b;
   color: #cdd6f4;
   margin-top: 16px; 
   padding: 12px 20px; 
   font-size: 16px; 
   border-radius: 10px;
   border: 10px;
+  text-decoration: black;
   border-color: #11111b;
 
 }
