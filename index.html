@@ -24,6 +24,7 @@
         // If redirected back with user data
         const params = new URLSearchParams(window.location.search);
         if (params.has('name') && params.has('email')) {
+            //obsolete but keep if need to revert
             document.body.innerHTML = `
                 <h1>Welcome, ${params.get('name')}!</h1>
                 <p>Email: ${params.get('email')}</p>
